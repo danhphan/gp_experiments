@@ -1,0 +1,7 @@
+torch>=1.9
+scikit-learn
+scipy
+matplotlib
+gpytorch
+pymc3==3.11.4
+jupyterlab
