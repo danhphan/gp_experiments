@@ -1,7 +1,10 @@
+numpy==1.19.0
 torch>=1.9
 scikit-learn
 scipy
 matplotlib
 gpytorch
+theano-pymc==1.1.2
 pymc3==3.11.4
 jupyterlab
+seaborn
