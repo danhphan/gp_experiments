@@ -11,3 +11,4 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+In case of using pymc3 => use `.dcm`
