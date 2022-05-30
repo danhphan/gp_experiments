@@ -1,5 +1,7 @@
-#conda install -c conda-forge pymc3==3.11.4 theano-pymc==1.1.2 mkl mkl-service
-numpy==1.20.0
+#conda create -n pymc3 python=3.9
+#pip install -r requirements.txt
+numpy==1.21.0
+pymc3==3.11.4
 torch>=1.9
 scikit-learn
 scipy
@@ -9,5 +11,3 @@ jupyterlab
 seaborn
 mogptk==0.2.6
 GPy==1.10.0
-# theano-pymc==1.1.2
-# pymc3==3.11.4
