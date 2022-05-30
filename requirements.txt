@@ -1,12 +1,13 @@
+#conda install -c conda-forge pymc3==3.11.4 theano-pymc==1.1.2 mkl mkl-service
 numpy==1.20.0
 torch>=1.9
 scikit-learn
 scipy
 matplotlib
 gpytorch==1.6.0
-theano-pymc==1.1.2
-pymc3==3.11.4
 jupyterlab
 seaborn
 mogptk==0.2.6
 GPy==1.10.0
+# theano-pymc==1.1.2
+# pymc3==3.11.4
