@@ -1,6 +1,6 @@
 #conda create -n pymc3 python=3.9
 #pip install -r requirements.txt
-numpy==1.21.0
+#numpy>=1.21.0
 pymc3==3.11.4
 torch>=1.9
 scikit-learn
