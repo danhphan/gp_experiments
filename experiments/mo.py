@@ -13,12 +13,45 @@ from pymc.gp.util import (
     stabilize,
 )
 
+import aesara.tensor as at
 from pymc.gp.gp import Marginal
 
+class Coregionalize(Covariance):
+    def __init__(self, input_dim, W=None, kappa=None, B=None, active_dims=None):
+        super().__init__(input_dim, active_dims)
+        if len(self.active_dims) != 1:
+            raise ValueError("Coregion requires exactly one dimension to be active")
+        make_B = W is not None or kappa is not None
+        if make_B and B is not None:
+            raise ValueError("Exactly one of (W, kappa) and B must be provided to Coregion")
+        if make_B:
+            self.W = at.as_tensor_variable(W)
+            self.kappa = at.as_tensor_variable(kappa)
+            self.B = at.dot(self.W, self.W.T) + at.diag(self.kappa)
+        elif B is not None:
+            self.B = at.as_tensor_variable(B)
+        else:
+            raise ValueError("Exactly one of (W, kappa) and B must be provided to Coregion")
+
+    def full(self, X, Xs=None):
+        # X, Xs = self._slice(X, Xs)
+        # index = at.cast(X, "int32")
+        # if Xs is None:
+        #     index2 = index.T
+        # else:
+        #     index2 = at.cast(Xs, "int32").T
+        # return self.B[index, index2]
+        return self.B
+
+    def diag(self, X):
+        # X, _ = self._slice(X, None)
+        # index = at.cast(X, "int32")
+        # return at.diag(self.B)[index.ravel()]
+        return at.diag(self.B)
 
 class MultiOutputMarginal(Marginal):
 
-    def __init__(self, means, kernels, input_dim, active_dims, num_outputs):
+    def __init__(self, means, kernels, input_dim, active_dims, num_outputs, W, B):
 
         self.means = means
         self.kernels = kernels
@@ -44,7 +77,13 @@ class MultiOutputMarginal(Marginal):
             kappa = pm.Gamma(f"{name}_kappa", alpha=5, beta=1, shape=num_outputs)        
         coreg = pm.gp.cov.Coregion(input_dim=input_dim, active_dims=active_dims, kappa=kappa, W=W)
         
+        self.B = coreg.B
+        # B = at.dot(W, W.T) + at.diag(kappa)
+        #coreg = Coregionalize(input_dim=input_dim, active_dims=active_dims, kappa=kappa, W=W)
+        # cov_func = pm.gp.cov.Kron([coreg, kernel])
+        # return cov_func
         return coreg * kernel
+        
         
 
     def _get_lcm(self, input_dim, active_dims, num_outputs, kernels, W_rank=1, W=None, kappa=None, name='ICM'):
