@@ -51,45 +51,44 @@ class Coregionalize(Covariance):
 
 class MultiOutputMarginal(Marginal):
 
-    def __init__(self, means, kernels, input_dim, active_dims, num_outputs, B=None, W=None):
-
+    def __init__(self, means, kernels, input_dim, active_dims, num_outputs, W=None, B=None):
         self.means = means
         self.kernels = kernels
-        self.cov_func = self._get_lcm(input_dim=input_dim, active_dims=active_dims, num_outputs=num_outputs, kernels=kernels)
+        self.cov_func = self._get_lcm(input_dim, active_dims, num_outputs, kernels, W, B)
         super().__init__(cov_func = self.cov_func)
 
 
-    def _get_icm(self, input_dim, active_dims, num_outputs, kernel, W_rank=1, W=None, kappa=None, name='ICM'):
+    def _get_icm(self, input_dim, kernel, W=None, kappa=None, B=None, active_dims=None, name='ICM'):
         """
         Builds a kernel for an Intrinsic Coregionalization Model (ICM)
         :input_dim: Input dimensionality (include the dimension of indices)
         :num_outputs: Number of outputs
         :kernel: kernel that will be multiplied by the coregionalize kernel (matrix B).
-        :W_rank: number tuples of the corregionalization parameters 'W'
         :W: the W matrix
-        :kappa:
+        :B: the convariance matrix for tasks
         :name: The name of Intrinsic Coregionalization Model
         """
-        if W is None:
-            W = pm.Normal(f"{name}_W", mu=0, sigma=5, shape=(num_outputs,W_rank), 
-                                                            initval=np.random.randn(num_outputs,W_rank))
-        if kappa is None:
-            kappa = pm.Gamma(f"{name}_kappa", alpha=5, beta=1, shape=num_outputs)        
-        coreg = pm.gp.cov.Coregion(input_dim=input_dim, active_dims=active_dims, kappa=kappa, W=W)
-        
-        self.B = coreg.B
+
+        coreg = pm.gp.cov.Coregion(input_dim=input_dim, W=W, kappa=kappa, B=B, active_dims=active_dims)
+        return coreg * kernel
         # B = at.dot(W, W.T) + at.diag(kappa)
         # coreg = Coregionalize(input_dim=input_dim, active_dims=active_dims, kappa=kappa, W=W)
         # cov_func = pm.gp.cov.Kron([coreg, kernel])
-        # return cov_func
-        return coreg * kernel
-        
+        # return cov_func        
         
 
-    def _get_lcm(self, input_dim, active_dims, num_outputs, kernels, W_rank=1, W=None, kappa=None, name='ICM'):
+    def _get_lcm(self, input_dim, active_dims, num_outputs, kernels, W=None, B=None, name='ICM'):
+        if B is None:
+            kappa = pm.Gamma(f"{name}_kappa", alpha=5, beta=1, shape=num_outputs)
+            if W is None:
+                W = pm.Normal(f"{name}_W", mu=0, sigma=5, shape=(num_outputs, 1), 
+                                                            initval=np.random.randn(num_outputs, 1))
+        else:
+            kappa = None
+            
         cov_func = 0
         for idx, kernel in enumerate(kernels):            
-            icm = self._get_icm(input_dim, active_dims, num_outputs, kernel, W_rank, W, kappa, f'{name}_{idx}')
+            icm = self._get_icm(input_dim, kernel, W, kappa, B, active_dims, f'{name}_{idx}')
             cov_func += icm
         return cov_func
 
@@ -127,4 +126,3 @@ class MultiOutputLatent(Latent):
         self.cov_func = self._get_lcm(input_dim=input_dim, active_dims=active_dims, num_outputs=num_outputs, kernels=kernels)
         super().__init__(cov_func = self.cov_func)
 
-        
