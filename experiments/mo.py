@@ -14,7 +14,7 @@ from pymc.gp.util import (
 )
 
 import aesara.tensor as at
-from pymc.gp.gp import Marginal
+from pymc.gp.gp import Base, Latent, Marginal
 
 class Coregionalize(Covariance):
     def __init__(self, input_dim, W=None, kappa=None, B=None, active_dims=None):
@@ -51,7 +51,7 @@ class Coregionalize(Covariance):
 
 class MultiOutputMarginal(Marginal):
 
-    def __init__(self, means, kernels, input_dim, active_dims, num_outputs, W, B):
+    def __init__(self, means, kernels, input_dim, active_dims, num_outputs, B=None, W=None):
 
         self.means = means
         self.kernels = kernels
@@ -79,7 +79,7 @@ class MultiOutputMarginal(Marginal):
         
         self.B = coreg.B
         # B = at.dot(W, W.T) + at.diag(kappa)
-        #coreg = Coregionalize(input_dim=input_dim, active_dims=active_dims, kappa=kappa, W=W)
+        # coreg = Coregionalize(input_dim=input_dim, active_dims=active_dims, kappa=kappa, W=W)
         # cov_func = pm.gp.cov.Kron([coreg, kernel])
         # return cov_func
         return coreg * kernel
@@ -117,3 +117,14 @@ class MultiOutputMarginal(Marginal):
             )
             return pm.MvNormal(name, mu=mu, cov=cov, **kwargs)
 
+
+class MultiOutputLatent(Latent):
+
+    def __init__(self, means, kernels, input_dim, active_dims, num_outputs, B=None, W=None):
+
+        self.means = means
+        self.kernels = kernels
+        self.cov_func = self._get_lcm(input_dim=input_dim, active_dims=active_dims, num_outputs=num_outputs, kernels=kernels)
+        super().__init__(cov_func = self.cov_func)
+
+        
