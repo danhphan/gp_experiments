@@ -215,9 +215,11 @@ class MultiOutputMarginal(Marginal):
                                                             initval=np.random.randn(num_outputs, 1))
         else:
             kappa = None
-            
+            W = None
+        
         cov_func = 0
         for idx, kernel in enumerate(kernels):            
+            print(B)        
             icm = self._get_icm(input_dim, kernel, W, kappa, B, active_dims, f'{name}_{idx}')
             cov_func += icm
         return cov_func
