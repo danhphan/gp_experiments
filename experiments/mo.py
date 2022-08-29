@@ -74,6 +74,31 @@ class CoregionMatrix(Covariance):
         else:
             return at.alloc(self.B, X.shape[0], Xs.shape[0])
 
+
+class KronProd(Covariance):
+
+    def __init__(self, factor_list):
+        self.input_dims = [factor.input_dim for factor in factor_list]
+        input_dim = sum(self.input_dims)
+        super().__init__(input_dim=input_dim)
+        self.factor_list = factor_list
+
+    def _split(self, X, Xs):
+        indices = np.cumsum(self.input_dims)
+        X_split = np.hsplit(X, indices)
+        if Xs is not None:
+            Xs_split = np.hsplit(Xs, indices)
+        else:
+            Xs_split = [None] * len(X_split)
+        return X_split, Xs_split
+
+    def __call__(self, X, Xs=None, diag=False):
+        from IPython.core.debugger import set_trace
+        set_trace()
+        X_split, Xs_split = self._split(X, Xs)
+        covs = [cov(x, xs, diag) for cov, x, xs in zip(self.factor_list, X_split, Xs_split)]
+        return reduce(mul, covs)
+
 class MultiOutputMarginal2(Marginal):
 
     def __init__(self, means, kernels, input_dim, active_dims, num_outputs, W=None, B=None):
